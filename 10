@@ -1,0 +1,97 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+sem_t mutex;      // protects readcount
+sem_t wrt;        // writer semaphore
+sem_t readTry;    // gives writer priority
+
+int readcount = 0;
+
+/* Reader function */
+void* reader(void* arg) {
+    int id = *((int*)arg);
+
+    sem_wait(&readTry);
+    sem_wait(&mutex);
+
+    readcount++;
+    if (readcount == 1)
+        sem_wait(&wrt);     // first reader blocks writers
+
+    sem_post(&mutex);
+    sem_post(&readTry);
+
+    // Reading section
+    printf("Reader %d is reading\n", id);
+    sleep(1);
+
+    sem_wait(&mutex);
+    readcount--;
+    if (readcount == 0)
+        sem_post(&wrt);     // last reader releases writer
+    sem_post(&mutex);
+
+    return NULL;
+}
+
+/* Writer function */
+void* writer(void* arg) {
+    int id = *((int*)arg);
+
+    sem_wait(&readTry);     // block new readers
+    sem_wait(&wrt);         // exclusive access
+
+    // Writing section
+    printf("Writer %d is writing\n", id);
+    sleep(1);
+
+    sem_post(&wrt);
+    sem_post(&readTry);     // allow readers again
+
+    return NULL;
+}
+
+int main() {
+    int rCount, wCount;
+
+    printf("Enter number of readers: ");
+    scanf("%d", &rCount);
+
+    printf("Enter number of writers: ");
+    scanf("%d", &wCount);
+
+    pthread_t r[rCount], w[wCount];
+    int rId[rCount], wId[wCount];
+
+    sem_init(&mutex, 0, 1);
+    sem_init(&wrt, 0, 1);
+    sem_init(&readTry, 0, 1);
+
+    // Create reader threads
+    for (int i = 0; i < rCount; i++) {
+        rId[i] = i + 1;
+        pthread_create(&r[i], NULL, reader, &rId[i]);
+    }
+
+    // Create writer threads
+    for (int i = 0; i < wCount; i++) {
+        wId[i] = i + 1;
+        pthread_create(&w[i], NULL, writer, &wId[i]);
+    }
+
+    // Join threads
+    for (int i = 0; i < rCount; i++)
+        pthread_join(r[i], NULL);
+
+    for (int i = 0; i < wCount; i++)
+        pthread_join(w[i], NULL);
+
+    sem_destroy(&mutex);
+    sem_destroy(&wrt);
+    sem_destroy(&readTry);
+
+    return 0;
+}
