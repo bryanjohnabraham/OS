@@ -1,0 +1,40 @@
+#include <stdio.h>
+
+struct Process {
+    int at, bt, wt;
+};
+
+int main() {
+    int n, time = 0;
+    float avg_wt = 0;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    struct Process p[n];
+
+    for(int i = 0; i < n; i++) {
+        printf("\nProcess %d\n", i+1);
+
+        printf("Arrival Time: ");
+        scanf("%d", &p[i].at);
+
+        printf("Burst Time: ");
+        scanf("%d", &p[i].bt);
+    }
+
+    for(int i = 0; i < n; i++) {
+
+        if(time < p[i].at)
+            time = p[i].at;
+
+        p[i].wt = time - p[i].at;
+        time += p[i].bt;
+
+        avg_wt += p[i].wt;
+    }
+
+    printf("\nFCFS Average Waiting Time = %.2f\n", avg_wt/n);
+
+    return 0;
+}
