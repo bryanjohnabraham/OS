@@ -1,0 +1,45 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int vas_mb, page_kb, virtual_address;
+
+    // Input from user
+    printf("Enter VAS (MB), Page Size (KB), Virtual Address:\n");
+    scanf("%d %d %d", &vas_mb, &page_kb, &virtual_address);
+
+    // Convert to bytes
+    int vas_bytes = vas_mb * 1024 * 1024;
+    int page_size = page_kb * 1024;
+
+    // Number of pages
+    int num_pages = vas_bytes / page_size;
+
+    // Page table
+    int page_table[num_pages];
+
+    // Initialize page table (simple mapping)
+    for (int i = 0; i < num_pages; i++) {
+        page_table[i] = i + 10;   // frame = page + 10
+    }
+
+    // Calculate page number and offset
+    int page_number = virtual_address / page_size;
+    int offset = virtual_address % page_size;
+
+    // Check for page table miss
+    if (page_number >= num_pages) {
+        printf("Page Table Miss!\n");
+        return 0;
+    }
+
+    int frame_number = page_table[page_number];
+
+    // Output
+    printf("\nVirtual Address: %d\n", virtual_address);
+    printf("Page Number: %d\n", page_number);
+    printf("Offset: %d\n", offset);
+    printf("Physical Address (Frame, Offset): <%d, %d>\n", frame_number, offset);
+
+    return 0;
+}
