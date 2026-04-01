@@ -1,0 +1,201 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define MAX 10
+#define DISK_SIZE 5000
+
+int compare(const void *a, const void *b)
+{
+    return (*(int *)a - *(int *)b);
+}
+
+// SSTF
+int sstf(int req[], int n, int start)
+{
+    int visited[MAX] = {0};
+    int total = 0;
+    int current = start;
+
+    for (int count = 0; count < n; count++)
+    {
+        int min = DISK_SIZE;
+        int index = -1;
+
+        for (int i = 0; i < n; i++)
+        {
+            if (!visited[i] && abs(req[i] - current) < min)
+            {
+                min = abs(req[i] - current);
+                index = i;
+            }
+        }
+
+        if (index == -1)
+            break;
+
+        visited[index] = 1;
+        total += min;
+        current = req[index];
+    }
+
+    return total;
+}
+
+// LOOK
+int look(int req[], int n, int start)
+{
+    int sorted[MAX];
+
+    for (int i = 0; i < n; i++)
+        sorted[i] = req[i];
+
+    qsort(sorted, n, sizeof(int), compare);
+
+    int total = 0;
+    int current = start;
+    int split = -1;
+
+    for (int i = 0; i < n; i++)
+    {
+        if (sorted[i] >= start)
+        {
+            split = i;
+            break;
+        }
+    }
+
+    // Service right side
+    if (split != -1)
+    {
+        for (int i = split; i < n; i++)
+        {
+            total += abs(sorted[i] - current);
+            current = sorted[i];
+        }
+
+        // Service left side
+        for (int i = split - 1; i >= 0; i--)
+        {
+            total += abs(sorted[i] - current);
+            current = sorted[i];
+        }
+    }
+    else
+    {
+        for (int i = n - 1; i >= 0; i--)
+        {
+            total += abs(sorted[i] - current);
+            current = sorted[i];
+        }
+    }
+
+    return total;
+}
+
+// C-SCAN
+int cscan(int req[], int n, int start)
+{
+    int sorted[MAX];
+
+    for (int i = 0; i < n; i++)
+        sorted[i] = req[i];
+
+    qsort(sorted, n, sizeof(int), compare);
+
+    int total = 0;
+    int current = start;
+    int split = -1;
+
+    for (int i = 0; i < n; i++)
+    {
+        if (sorted[i] >= start)
+        {
+            split = i;
+            break;
+        }
+    }
+
+    // Service right side
+    if (split != -1)
+    {
+        for (int i = split; i < n; i++)
+        {
+            total += abs(sorted[i] - current);
+            current = sorted[i];
+        }
+
+        // Go to end
+        total += abs((DISK_SIZE - 1) - current);
+        current = DISK_SIZE - 1;
+
+        // Jump to beginning
+        total += (DISK_SIZE - 1);
+        current = 0;
+
+        // Service left side
+        for (int i = 0; i < split; i++)
+        {
+            total += abs(sorted[i] - current);
+            current = sorted[i];
+        }
+    }
+    else
+    {
+        // Go to end
+        total += abs((DISK_SIZE - 1) - current);
+        current = DISK_SIZE - 1;
+
+        // Jump to beginning
+        total += (DISK_SIZE - 1);
+        current = 0;
+
+        // Service all
+        for (int i = 0; i < n; i++)
+        {
+            total += abs(sorted[i] - current);
+            current = sorted[i];
+        }
+    }
+
+    return total;
+}
+
+int main(int argc, char *argv[])
+{
+    int start;
+    int req[MAX];
+
+    if (argc != 2)
+    {
+        printf("Usage: %s <initial_head_position>\n", argv[0]);
+        return 1;
+    }
+
+    start = atoi(argv[1]);
+
+    if (start < 0 || start >= DISK_SIZE)
+    {
+        printf("Invalid head position! Must be between 0 and %d\n",
+               DISK_SIZE - 1);
+        return 1;
+    }
+
+    srand(time(NULL));
+
+    printf("\nGenerated Requests:\n");
+    for (int i = 0; i < MAX; i++)
+    {
+        req[i] = rand() % DISK_SIZE;
+        printf("%d ", req[i]);
+    }
+
+    printf("\n");
+
+    printf("\nTotal Head Movements:\n");
+    printf("SSTF   : %d\n", sstf(req, MAX, start));
+    printf("LOOK   : %d\n", look(req, MAX, start));
+    printf("C-SCAN : %d\n", cscan(req, MAX, start));
+
+    return 0;
+}
