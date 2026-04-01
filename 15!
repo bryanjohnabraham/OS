@@ -1,0 +1,234 @@
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <time.h>
+
+#define MAX 100
+
+// Generate random reference string
+
+void generate(int ref[], int n) {
+
+for (int i = 0; i < n; i++) {
+
+    ref[i] = rand() % 10;  // pages 0–9
+
+}
+
+}
+
+// FIFO
+
+int fifo(int ref[], int n, int frames) {
+
+int f[10], front = 0, faults = 0;
+
+for (int i = 0; i < frames; i++) f[i] = -1;
+
+for (int i = 0; i < n; i++) {
+
+    int found = 0;
+
+    for (int j = 0; j < frames; j++) {
+
+        if (f[j] == ref[i]) {
+
+            found = 1;
+
+            break;
+
+        }
+
+    }
+
+    if (!found) {
+
+        f[front] = ref[i];
+
+        front = (front + 1) % frames;
+
+        faults++;
+
+    }
+
+}
+
+return faults;
+
+}
+
+// LRU
+
+int lru(int ref[], int n, int frames) {
+
+int f[10], time[10], faults = 0;
+
+for (int i = 0; i < frames; i++) {
+
+    f[i] = -1; time[i] = 0;
+
+}
+
+for (int i = 0; i < n; i++) {
+
+    int found = 0;
+
+    for (int j = 0; j < frames; j++) {
+
+        if (f[j] == ref[i]) {
+
+            found = 1; time[j] = i; break;
+
+        }
+
+    }
+
+    if (!found) {
+
+        int pos = -1;
+
+// Step 1: check for empty frame
+
+        for (int j = 0; j < frames; j++) {
+
+            if (f[j] == -1) {pos = j; break;}
+
+        }
+
+// Step 2: if no empty frame → use LRU
+
+        if (pos == -1) {
+
+            pos = 0;
+
+            for (int j = 1; j < frames; j++) {
+
+                if (time[j] < time[pos]) pos = j;
+
+            }
+
+        }
+
+        f[pos] = ref[i]; time[pos] = i;  faults++;
+
+    }
+
+}
+
+return faults;}
+
+// OPTIMAL
+
+int optimal(int ref[], int n, int frames) {
+
+int f[10], faults = 0;
+
+for (int i = 0; i < frames; i++) f[i] = -1;
+
+for (int i = 0; i < n; i++) {
+
+    int found = 0;
+
+    for (int j = 0; j < frames; j++) {
+
+        if (f[j] == ref[i]) {
+
+            found = 1;
+
+            break;
+
+        }
+
+    }
+
+    if (!found) {
+
+        int pos = -1, farthest = i;
+
+        for (int j = 0; j < frames; j++) {
+
+            int k;
+
+            for (k = i + 1; k < n; k++) {
+
+                if (f[j] == ref[k]) break;
+
+            }
+
+            if (k == n) {  // not used again
+
+                pos = j;
+
+                break;
+
+            }
+
+            if (k > farthest) {
+
+                farthest = k;
+
+                pos = j;
+
+            }
+
+        }
+
+        if (pos == -1) pos = 0;
+
+
+
+        f[pos] = ref[i];
+
+        faults++;
+
+    }
+
+}
+
+return faults;
+
+}
+
+int main(int argc, char *argv[]) {
+
+int n, frames;
+
+int ref[MAX];
+
+if (argc != 3) {
+
+    printf("Usage: %s <length> <frames>\n", argv[0]);
+
+    return 1;
+
+}
+
+n = atoi(argv[1]);
+
+frames = atoi(argv[2]);
+
+srand(time(NULL));
+
+generate(ref, n);
+
+printf("\nReference String:\n");
+
+for (int i = 0; i < n; i++) {
+
+    printf("%d ", ref[i]);
+
+}
+
+printf("\n\nPage Faults:\n");
+
+printf("FIFO: %d\n", fifo(ref, n, frames));
+
+printf("LRU: %d\n", lru(ref, n, frames));
+
+printf("Optimal: %d\n", optimal(ref, n, frames));
+
+return 0;
+
+}
